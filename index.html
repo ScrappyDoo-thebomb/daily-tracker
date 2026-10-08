@@ -6,24 +6,17 @@
   <title>Daily Tracker</title>
   <style>
     :root {
-      --bg: #f6f7f9;
-      --card: #ffffff;
-      --text: #1d2330;
-      --muted: #667085;
-      --green: #1f9d55;
-      --green-dark: #17803f;
-      --red: #d64545;
-      --red-dark: #b33434;
-      --border: #e3e6eb;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #12151b;
-        --card: #1b1f27;
-        --text: #e8eaee;
-        --muted: #98a1b3;
-        --border: #2b313c;
-      }
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --axis: #cbd5e1;
+      --border: rgba(148, 163, 184, 0.18);
+      --grid: rgba(148, 163, 184, 0.12);
+      --green: #22c55e;
+      --green-dark: #16a34a;
+      --red: #ef4444;
+      --red-dark: #dc2626;
     }
     * { box-sizing: border-box; }
     body {
@@ -32,8 +25,9 @@
       background: var(--bg);
       color: var(--text);
     }
-    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+    main { max-width: 820px; margin: 0 auto; padding: 24px 16px 48px; }
     h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    h2 { font-size: 1.05rem; margin: 0 0 12px; }
     .date { color: var(--muted); margin: 0 0 24px; }
     .card {
       background: var(--card);
@@ -52,18 +46,28 @@
       padding: 36px 12px;
       cursor: pointer;
       user-select: none;
+      touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       transition: transform 80ms ease, box-shadow 80ms ease, background 80ms ease;
-      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
     }
     .tap .count { display: block; font-size: 2.6rem; margin-top: 8px; }
-    .tap:active, .tap.pressed { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); }
-    .correct { background: var(--green); }
-    .correct:active, .correct.pressed { background: var(--green-dark); }
-    .wrong { background: var(--red); }
-    .wrong:active, .wrong.pressed { background: var(--red-dark); }
+    .tap:active, .tap.is-pressed { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
+    .correct { background: var(--green-dark); }
+    .correct:active, .correct.is-pressed { background: #15803d; }
+    .wrong { background: var(--red-dark); }
+    .wrong:active, .wrong.is-pressed { background: #b91c1c; }
+
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stat-label { color: var(--muted); font-size: 0.85rem; margin-bottom: 4px; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat-value.correct-text { color: var(--green); }
+    .stat-value.wrong-text { color: var(--red); }
+    .trend { font-size: 0.85rem; margin-top: 4px; color: var(--muted); }
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+
     .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .stat { color: var(--muted); }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .small {
       background: transparent;
@@ -74,201 +78,338 @@
       cursor: pointer;
       font-size: 0.9rem;
     }
-    h2 { font-size: 1.1rem; margin: 0 0 12px; }
-    .chart-wrap { position: relative; height: 320px; }
-    .chart-wrap svg { width: 100%; height: 100%; display: block; }
-    .chart-wrap text { fill: var(--muted); font-size: 11px; }
-    .chart-wrap .grid { stroke: var(--border); }
-    .chart-wrap .bar-correct { fill: var(--green); }
-    .chart-wrap .bar-wrong { fill: var(--red); }
-    .legend { display: flex; gap: 16px; justify-content: center; color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
-    .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+    .small.danger { color: var(--red); border-color: rgba(239, 68, 68, 0.4); }
+
+    .chart-wrap { position: relative; height: 300px; }
+    .chart-wrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .chart-wrap text { fill: var(--axis); font-size: 11px; }
+    .chart-wrap .grid { stroke: var(--grid); }
+    .chart-wrap .line { fill: none; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+    .chart-wrap .dot { stroke: #fff; stroke-width: 1.5; }
+    .legend { display: flex; gap: 16px; justify-content: center; color: var(--axis); font-size: 0.9rem; margin-top: 8px; }
+    .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
     .sw.correct { background: var(--green); }
     .sw.wrong { background: var(--red); }
+
     table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.95rem; }
     th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
     th { color: var(--muted); font-weight: 600; }
     td.num { font-variant-numeric: tabular-nums; }
     .empty { color: var(--muted); text-align: center; padding: 24px 0; }
+
+    @media (max-width: 560px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stats .today { grid-column: 1 / -1; }
+    }
   </style>
 </head>
 <body>
   <main>
     <h1>Daily Tracker</h1>
-    <p class="date" id="today-label"></p>
+    <p class="date" id="todayLabel"></p>
 
     <section class="card">
       <div class="buttons">
-        <button class="tap correct" id="btn-correct" aria-label="Add a correct">
-          Correct<span class="count" id="count-correct">0</span>
+        <button class="tap correct" id="correctBtn" aria-label="Add a correct">
+          Correct<span class="count" id="correctCount">0</span>
         </button>
-        <button class="tap wrong" id="btn-wrong" aria-label="Add a wrong">
-          Wrong<span class="count" id="count-wrong">0</span>
+        <button class="tap wrong" id="wrongBtn" aria-label="Add a wrong">
+          Wrong<span class="count" id="wrongCount">0</span>
         </button>
       </div>
     </section>
 
     <section class="card">
-      <div class="row">
-        <span class="stat" id="today-stat"></span>
-        <div class="actions">
-          <button class="small" id="btn-undo">Undo last</button>
-          <button class="small" id="btn-export">Export CSV</button>
+      <div class="stats">
+        <div>
+          <div class="stat-label">All-time correct</div>
+          <div class="stat-value correct-text" id="totalCorrect">0</div>
+          <div class="trend" id="correctTrend"></div>
+        </div>
+        <div>
+          <div class="stat-label">All-time wrong</div>
+          <div class="stat-value wrong-text" id="totalWrong">0</div>
+          <div class="trend" id="wrongTrend"></div>
+        </div>
+        <div class="today">
+          <div class="stat-label">Today (correct / wrong)</div>
+          <div class="stat-value" id="todaySummary">0 / 0</div>
+          <div class="trend" id="todayComparison"></div>
         </div>
       </div>
     </section>
 
     <section class="card">
-      <h2>Daily results</h2>
-      <div class="chart-wrap" id="chart"></div>
+      <div class="row">
+        <h2 style="margin:0">Daily results</h2>
+        <div class="actions">
+          <button class="small" id="undoBtn">Undo last</button>
+          <button class="small" id="exportBtn">Export CSV</button>
+          <button class="small danger" id="clearDataBtn">Clear data</button>
+        </div>
+      </div>
+      <div class="chart-wrap" id="trendChart" style="margin-top:16px"></div>
       <div class="legend"><span><i class="sw correct"></i>Correct</span><span><i class="sw wrong"></i>Wrong</span></div>
       <div id="history"></div>
     </section>
   </main>
 
   <script>
-    // Clicks are stored per calendar day, so each day's totals are
-    // accumulated automatically and a new day starts back at zero.
-    const STORAGE_KEY = 'daily-tracker-v1';
+    // Each day's clicks are stored under that day's local date, so totals
+    // accumulate through the day and a new day starts back at zero.
+    const STORAGE_KEY = 'daily-button-tracker-v1';
+    const LEGACY_KEY = 'daily-tracker-v1';
     const MAX_DAYS_IN_CHART = 30;
 
-    function loadData() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (parsed && parsed.days) return parsed;
-      } catch (e) { /* storage unavailable or corrupt */ }
-      return { days: {}, lastAction: null };
-    }
-
-    function saveData() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
-    }
-
-    function todayKey(d = new Date()) {
-      const pad = n => String(n).padStart(2, '0');
+    // Local (not UTC) date, so late-evening clicks count toward today.
+    const dateKey = (d = new Date()) => {
+      const pad = (n) => String(n).padStart(2, '0');
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    }
+    };
+    const currentDateKey = () => dateKey();
+    const yesterdayKey = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dateKey(d); };
 
-    function formatDay(key, opts = { month: 'short', day: 'numeric' }) {
-      const [y, m, d] = key.split('-').map(Number);
-      return new Date(y, m - 1, d).toLocaleDateString(undefined, opts);
-    }
+    const safeNumber = (value) => { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : 0; };
 
-    function dayEntry(key) {
-      if (!data.days[key]) data.days[key] = { correct: 0, wrong: 0 };
-      return data.days[key];
-    }
+    const loadData = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed && typeof parsed === 'object' ? parsed : {};
+        }
+        // Carry over clicks saved by the first version of this page.
+        const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY));
+        if (legacy && legacy.days) {
+          const migrated = {};
+          Object.entries(legacy.days).forEach(([date, entry]) => {
+            migrated[date] = { date, correct: safeNumber(entry.correct), wrong: safeNumber(entry.wrong) };
+          });
+          saveData(migrated);
+          localStorage.removeItem(LEGACY_KEY);
+          return migrated;
+        }
+      } catch (error) {
+        console.warn('Unable to read tracker data from localStorage.', error);
+      }
+      return {};
+    };
 
-    let data = loadData();
-    let currentDay = todayKey();
+    const saveData = (data) => {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+      catch (error) { console.warn('Unable to save tracker data.', error); }
+    };
 
-    function record(type) {
-      currentDay = todayKey();
-      dayEntry(currentDay)[type] += 1;
-      data.lastAction = { day: currentDay, type };
-      saveData();
-      render();
-    }
+    const ensureTodayEntry = (data) => {
+      const today = currentDateKey();
+      if (!data[today]) data[today] = { date: today, correct: 0, wrong: 0 };
+      return data[today];
+    };
 
-    function undo() {
-      const last = data.lastAction;
-      if (!last || !data.days[last.day] || data.days[last.day][last.type] <= 0) return;
-      data.days[last.day][last.type] -= 1;
-      data.lastAction = null;
-      saveData();
-      render();
-    }
+    const formatDateLabel = (dateString, opts = { month: 'short', day: 'numeric' }) =>
+      new Intl.DateTimeFormat('en-US', opts).format(new Date(`${dateString}T00:00:00`));
 
-    function exportCsv() {
-      const rows = [['date', 'correct', 'wrong', 'total', 'accuracy_percent']];
-      Object.keys(data.days).sort().forEach(k => {
-        const { correct, wrong } = data.days[k];
-        const total = correct + wrong;
-        rows.push([k, correct, wrong, total, total ? Math.round((correct / total) * 100) : '']);
-      });
-      const blob = new Blob([rows.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `daily-tracker-${todayKey()}.csv`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
+    const calculatePercentageChange = (start, end) => {
+      if (!start && !end) return 0;
+      if (!start && end > 0) return 100;
+      return Number((((end - start) / start) * 100).toFixed(1));
+    };
 
-    function render() {
-      const today = data.days[currentDay] || { correct: 0, wrong: 0 };
-      const total = today.correct + today.wrong;
-      document.getElementById('today-label').textContent =
-        formatDay(currentDay, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      document.getElementById('count-correct').textContent = today.correct;
-      document.getElementById('count-wrong').textContent = today.wrong;
-      document.getElementById('today-stat').textContent = total
-        ? `Today: ${total} total · ${Math.round((today.correct / total) * 100)}% correct`
-        : 'Today: no clicks yet';
+    const formatChange = (pct) => `${pct > 0 ? '+' : ''}${pct}%`;
 
-      const keys = Object.keys(data.days).sort().slice(-MAX_DAYS_IN_CHART);
-      renderChart(keys);
-      renderHistory(keys);
-    }
+    const getTrendSummary = (series) => {
+      const firstValue = series[0] ?? 0;
+      const lastValue = series[series.length - 1] ?? 0;
+      return { firstValue, lastValue, percentage: calculatePercentageChange(firstValue, lastValue) };
+    };
 
-    function renderChart(keys) {
-      const el = document.getElementById('chart');
-      const W = el.clientWidth || 600, H = el.clientHeight || 320;
-      const pad = { top: 12, right: 8, bottom: 28, left: 32 };
+    const getDaySummary = (data, key) => {
+      const entry = data[key] || { correct: 0, wrong: 0 };
+      return { correct: safeNumber(entry.correct), wrong: safeNumber(entry.wrong) };
+    };
+
+    const setButtonPressedState = (button) => {
+      button.classList.add('is-pressed');
+      clearTimeout(button._pressTimer);
+      button._pressTimer = setTimeout(() => button.classList.remove('is-pressed'), 160);
+    };
+
+    // For "correct", going up is good; for "wrong", going down is good.
+    const setTrendClass = (el, pct, upIsGood) => {
+      const good = upIsGood ? pct > 0 : pct < 0;
+      const bad = upIsGood ? pct < 0 : pct > 0;
+      el.classList.toggle('positive', good);
+      el.classList.toggle('negative', bad);
+    };
+
+    const renderStats = (data, sortedDates) => {
+      const todayKey = currentDateKey();
+      const today = getDaySummary(data, todayKey);
+      const correctSeries = sortedDates.map((key) => safeNumber(data[key]?.correct));
+      const wrongSeries = sortedDates.map((key) => safeNumber(data[key]?.wrong));
+      const correctSummary = getTrendSummary(correctSeries);
+      const wrongSummary = getTrendSummary(wrongSeries);
+
+      document.getElementById('todayLabel').textContent =
+        formatDateLabel(todayKey, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('correctCount').textContent = String(today.correct);
+      document.getElementById('wrongCount').textContent = String(today.wrong);
+      document.getElementById('totalCorrect').textContent = String(correctSeries.reduce((s, v) => s + v, 0));
+      document.getElementById('totalWrong').textContent = String(wrongSeries.reduce((s, v) => s + v, 0));
+      document.getElementById('todaySummary').textContent = `${today.correct} / ${today.wrong}`;
+
+      const correctTrend = document.getElementById('correctTrend');
+      const wrongTrend = document.getElementById('wrongTrend');
+      if (sortedDates.length > 1) {
+        correctTrend.textContent = `${formatChange(correctSummary.percentage)} first day → today`;
+        wrongTrend.textContent = `${formatChange(wrongSummary.percentage)} first day → today`;
+        setTrendClass(correctTrend, correctSummary.percentage, true);
+        setTrendClass(wrongTrend, wrongSummary.percentage, false);
+      } else {
+        correctTrend.textContent = wrongTrend.textContent = 'No trend yet';
+        setTrendClass(correctTrend, 0, true);
+        setTrendClass(wrongTrend, 0, false);
+      }
+
+      const todayComparison = document.getElementById('todayComparison');
+      const yKey = yesterdayKey();
+      if (data[yKey]) {
+        const yesterday = getDaySummary(data, yKey);
+        const correctDelta = calculatePercentageChange(yesterday.correct, today.correct);
+        const wrongDelta = calculatePercentageChange(yesterday.wrong, today.wrong);
+        todayComparison.innerHTML =
+          `<span id="cmpCorrect">Correct ${formatChange(correctDelta)}</span> • ` +
+          `<span id="cmpWrong">Wrong ${formatChange(wrongDelta)}</span> vs. yesterday`;
+        setTrendClass(document.getElementById('cmpCorrect'), correctDelta, true);
+        setTrendClass(document.getElementById('cmpWrong'), wrongDelta, false);
+      } else {
+        todayComparison.textContent = 'No data for yesterday';
+      }
+    };
+
+    const renderChart = (data, keys) => {
+      const el = document.getElementById('trendChart');
+      const W = el.clientWidth || 600, H = el.clientHeight || 300;
+      const pad = { top: 12, right: 12, bottom: 28, left: 32 };
       const plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
-      const max = Math.max(1, ...keys.map(k => Math.max(data.days[k].correct, data.days[k].wrong)));
+      const correct = keys.map((k) => safeNumber(data[k].correct));
+      const wrong = keys.map((k) => safeNumber(data[k].wrong));
+      const max = Math.max(1, ...correct, ...wrong);
       const step = Math.max(1, Math.ceil(max / 5));
       const top = Math.ceil(max / step) * step;
-      const y = v => pad.top + plotH - (v / top) * plotH;
+      const x = (i) => pad.left + (keys.length > 1 ? (i / (keys.length - 1)) * plotW : plotW / 2);
+      const y = (v) => pad.top + plotH - (v / top) * plotH;
 
       let svg = '';
       for (let v = 0; v <= top; v += step) {
         svg += `<line class="grid" x1="${pad.left}" x2="${W - pad.right}" y1="${y(v)}" y2="${y(v)}"/>`;
         svg += `<text x="${pad.left - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
       }
-      const groupW = keys.length ? plotW / keys.length : plotW;
-      const barW = Math.min(28, groupW * 0.35);
-      const labelEvery = Math.ceil(keys.length / Math.max(1, Math.floor(plotW / 48)));
+      const labelEvery = Math.ceil(keys.length / Math.max(1, Math.floor(plotW / 52)));
       keys.forEach((k, i) => {
-        const cx = pad.left + groupW * i + groupW / 2;
-        const { correct, wrong } = data.days[k];
-        svg += `<rect class="bar-correct" x="${cx - barW - 1}" y="${y(correct)}" width="${barW}" height="${y(0) - y(correct)}" rx="3"><title>${formatDay(k)}: ${correct} correct</title></rect>`;
-        svg += `<rect class="bar-wrong" x="${cx + 1}" y="${y(wrong)}" width="${barW}" height="${y(0) - y(wrong)}" rx="3"><title>${formatDay(k)}: ${wrong} wrong</title></rect>`;
-        if (i % labelEvery === 0) svg += `<text x="${cx}" y="${H - 8}" text-anchor="middle">${formatDay(k)}</text>`;
+        if (i % labelEvery === 0) svg += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${formatDateLabel(k)}</text>`;
       });
+      const series = (values, color, name) => {
+        const pts = values.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+        let out = `<polyline class="line" stroke="${color}" points="${pts}"/>`;
+        values.forEach((v, i) => {
+          out += `<circle class="dot" cx="${x(i)}" cy="${y(v)}" r="4" fill="${color}"><title>${formatDateLabel(keys[i])}: ${v} ${name}</title></circle>`;
+        });
+        return out;
+      };
+      svg += series(wrong, 'var(--red)', 'wrong') + series(correct, 'var(--green)', 'correct');
       el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Correct and wrong clicks per day">${svg}</svg>`;
-    }
+    };
 
-    function renderHistory(keys) {
+    const renderHistory = (data, keys) => {
       const el = document.getElementById('history');
-      if (!keys.length) {
-        el.innerHTML = '<p class="empty">Press a button to start tracking. Each day\'s totals will show up here.</p>';
-        return;
-      }
-      const rows = keys.slice().reverse().map(k => {
-        const { correct, wrong } = data.days[k];
+      const todayKey = currentDateKey();
+      const rows = keys.slice().reverse().map((k) => {
+        const { correct, wrong } = getDaySummary(data, k);
         const total = correct + wrong;
         const pct = total ? Math.round((correct / total) * 100) + '%' : '—';
-        const label = k === currentDay ? `${formatDay(k)} (today)` : formatDay(k);
+        const label = k === todayKey ? `${formatDateLabel(k)} (today)` : formatDateLabel(k);
         return `<tr><td>${label}</td><td class="num">${correct}</td><td class="num">${wrong}</td><td class="num">${total}</td><td class="num">${pct}</td></tr>`;
       }).join('');
       el.innerHTML = `<table><thead><tr><th>Day</th><th>Correct</th><th>Wrong</th><th>Total</th><th>Accuracy</th></tr></thead><tbody>${rows}</tbody></table>`;
-    }
+    };
 
-    document.getElementById('btn-correct').addEventListener('click', () => record('correct'));
-    document.getElementById('btn-wrong').addEventListener('click', () => record('wrong'));
-    document.getElementById('btn-undo').addEventListener('click', undo);
-    document.getElementById('btn-export').addEventListener('click', exportCsv);
+    let renderedDay = currentDateKey();
+    let lastAction = null;
 
-    // Roll over to a fresh day at midnight even if the page stays open.
-    setInterval(() => {
-      if (todayKey() !== currentDay) {
-        currentDay = todayKey();
-        render();
+    const renderDashboard = () => {
+      const data = loadData();
+      ensureTodayEntry(data);
+      saveData(data);
+      renderedDay = currentDateKey();
+      const sortedDates = Object.keys(data).sort();
+      const recent = sortedDates.slice(-MAX_DAYS_IN_CHART);
+      renderStats(data, sortedDates);
+      renderChart(data, recent);
+      renderHistory(data, recent);
+    };
+
+    const incrementButton = (type) => {
+      const data = loadData();
+      const trackedDay = ensureTodayEntry(data);
+      trackedDay[type] = safeNumber(trackedDay[type]) + 1;
+      lastAction = { date: trackedDay.date, type };
+      saveData(data);
+      renderDashboard();
+    };
+
+    const undoLast = () => {
+      if (!lastAction) return;
+      const data = loadData();
+      const entry = data[lastAction.date];
+      if (entry && safeNumber(entry[lastAction.type]) > 0) {
+        entry[lastAction.type] = safeNumber(entry[lastAction.type]) - 1;
+        saveData(data);
       }
-    }, 30 * 1000);
+      lastAction = null;
+      renderDashboard();
+    };
 
-    window.addEventListener('resize', render);
-    render();
+    const exportCsv = () => {
+      const data = loadData();
+      const rows = [['date', 'correct', 'wrong', 'total', 'accuracy_percent']];
+      Object.keys(data).sort().forEach((k) => {
+        const { correct, wrong } = getDaySummary(data, k);
+        const total = correct + wrong;
+        rows.push([k, correct, wrong, total, total ? Math.round((correct / total) * 100) : '']);
+      });
+      const blob = new Blob([rows.map((r) => r.join(',')).join('\n')], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `daily-tracker-${currentDateKey()}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    const resetData = () => {
+      if (!window.confirm('Clear all saved tracker data?')) return;
+      try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* ignore */ }
+      lastAction = null;
+      renderDashboard();
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const correctButton = document.getElementById('correctBtn');
+      const wrongButton = document.getElementById('wrongBtn');
+      correctButton.addEventListener('pointerdown', () => setButtonPressedState(correctButton));
+      wrongButton.addEventListener('pointerdown', () => setButtonPressedState(wrongButton));
+      correctButton.addEventListener('click', () => incrementButton('correct'));
+      wrongButton.addEventListener('click', () => incrementButton('wrong'));
+      document.getElementById('undoBtn').addEventListener('click', undoLast);
+      document.getElementById('exportBtn').addEventListener('click', exportCsv);
+      document.getElementById('clearDataBtn').addEventListener('click', resetData);
+      renderDashboard();
+    });
+
+    // Keep other open tabs in sync, redraw on resize, and roll over at midnight.
+    window.addEventListener('storage', renderDashboard);
+    window.addEventListener('resize', renderDashboard);
+    setInterval(() => { if (currentDateKey() !== renderedDay) renderDashboard(); }, 30 * 1000);
   </script>
 </body>
 </html>
