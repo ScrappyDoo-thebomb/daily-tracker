@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daily Button Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Daily tracking</p>
+          <h1>Correct vs. Wrong</h1>
+        </div>
+        <button id="clearDataBtn" class="ghost-button" type="button">Clear data</button>
+      </header>
+
+      <main class="dashboard">
+        <section class="controls card">
+          <div class="button-row">
+            <button id="correctBtn" class="action-button correct-button" type="button">
+              <span class="button-label">Correct</span>
+              <span id="correctCount" class="button-total">0</span>
+            </button>
+
+            <button id="wrongBtn" class="action-button wrong-button" type="button">
+              <span class="button-label">Wrong</span>
+              <span id="wrongCount" class="button-total">0</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="stats-grid">
+          <article class="stat-card card accent-green">
+            <p class="stat-label">Correct total</p>
+            <h2 id="totalCorrect">0</h2>
+            <p id="correctTrend" class="stat-trend">0% all-time trend</p>
+          </article>
+
+          <article class="stat-card card accent-red">
+            <p class="stat-label">Wrong total</p>
+            <h2 id="totalWrong">0</h2>
+            <p id="wrongTrend" class="stat-trend">0% all-time trend</p>
+          </article>
+
+          <article class="stat-card card accent-blue">
+            <p class="stat-label">Today</p>
+            <h2 id="todaySummary">0 / 0</h2>
+            <p id="todayComparison" class="stat-trend">No trend yet</p>
+          </article>
+        </section>
+
+        <section class="chart-card card">
+          <div class="chart-header">
+            <div>
+              <p class="eyebrow">All-time trend</p>
+              <h2>Daily button activity</h2>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="trendChart" aria-label="Correct versus wrong daily trend chart"></canvas>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
